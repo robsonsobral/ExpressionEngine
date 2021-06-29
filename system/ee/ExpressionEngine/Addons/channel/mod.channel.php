@@ -3986,9 +3986,13 @@ class Channel
 
         // Is the category being specified by name?
 
-        if ($qstring != '' and $this->reserved_cat_segment != '' and in_array($this->reserved_cat_segment, explode("/", $qstring)) and ee()->TMPL->fetch_param('channel')) {
-            $qstring = preg_replace("/(.*?)\/" . preg_quote($this->reserved_cat_segment) . "\//i", '', '/' . $qstring);
-
+        if (
+            (
+                ($this->reserved_cat_segment != '' and in_array($this->reserved_cat_segment, explode("/", $qstring)))
+                OR ee()->TMPL->fetch_param('category_url_name')
+            )
+            and ee()->TMPL->fetch_param('channel')
+        ) {
             $sql = "SELECT DISTINCT cat_group FROM exp_channels WHERE site_id IN ('" . implode("','", ee()->TMPL->site_ids) . "') AND ";
 
             $xsql = ee()->functions->sql_andor_string(ee()->TMPL->fetch_param('channel'), 'channel_name');
@@ -4025,6 +4029,8 @@ class Channel
             }
 
             if ($valid == 'y') {
+                $qstring = preg_replace("/(.*?)\/" . preg_quote($this->reserved_cat_segment) . "\//i", '', '/' . $qstring);
+
                 // the category URL title should be the first segment left at this point in $qstring,
                 // but because prior to this feature being added, category names were used in URLs,
                 // and '/' is a valid character for category names.  If they have not updated their
@@ -4034,6 +4040,10 @@ class Channel
 
                 $temp = explode('/', $qstring);
                 $cut_qstring = array_shift($temp);
+                
+                if (ee()->TMPL->fetch_param('category_url_name')) {
+                    $cut_qstring = ee()->TMPL->fetch_param('category_url_name');
+                }
 
                 $result = ee()->db->query("SELECT cat_id FROM exp_categories
 									  WHERE cat_url_title='" . ee()->db->escape_str($cut_qstring) . "'
